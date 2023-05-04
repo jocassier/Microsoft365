@@ -1,13 +1,24 @@
+[DscLocalConfigurationManager()]
 Configuration LCM
 {
-    Import-DscResource -ModuleName 'PSDesiredStateConfiguration'
 
-    Node localhost
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [System.String[]]
+        $PartialConfiguration
+    )
+
+    Settings
     {
-        LocalConfigurationManager
+        ConfigurationMode = "ApplyOnly"
+    }
+
+    foreach($configuration in $PartialConfiguration) 
+    {
+        PartialConfiguration $configuration
         {
-            ConfigurationMode = "ApplyOnly"
-            CertificateId = $certForDSC.Thumbprint
+            RefreshMode = 'Push'
         }
     }
 }
