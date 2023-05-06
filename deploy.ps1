@@ -1,22 +1,5 @@
 [CmdletBinding()]
 param (
-    # [Parameter()]
-    # [ValidateScript(
-    #     { 
-    #         $validValues = (Get-ChildItem -Path '.\output\workloads').BaseName
-    #         foreach($value in $_) 
-    #         {
-    #             if($value -notin $validValues)
-    #             {
-    #                 throw "Valid values are $($validValues -join ', ')"
-    #             }
-    #         }
-    #         return $true 
-    #     }
-    # )]
-    # [String[]] 
-    # $ConfigurationName = (Get-ChildItem -Path '.\output\workloads').BaseName,
-
     [Parameter()]
     [switch]
     $Test

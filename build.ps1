@@ -23,11 +23,10 @@ if(Test-Path -Path '.\output')
     Remove-Item -Path '.\output' -Recurse -Force
 }
 
-
-Write-Output -InputObject 'Build configurations...'
+Write-Output -InputObject 'Build Workload(s)...'
 
 # Load configurations
-$configurations = Get-ChildItem -Path '.\source\workloads' -Filter '*.ps1' | Where-Object -FilterScript {$_.BaseName -in $ConfigurationName}
+$configurations = Get-ChildItem -Path '.\source\workloads' -Depth 1 -Filter '*.ps1' | Where-Object -FilterScript {$_.BaseName -in $ConfigurationName}
 
 # Build configurations
 $configurations | ForEach-Object {
@@ -36,14 +35,16 @@ $configurations | ForEach-Object {
     . $_.FullName
 
     # execute configuration
-    (Invoke-Expression -Command "$($_.BaseName) -OutputPath .\output\workloads\$($_.BaseName)").Directory
+    Invoke-Expression -Command "$($_.BaseName) -OutputPath .\output\workloads\$($_.BaseName)"
 }
 
+Write-Output -InputObject 'Build Local Configuration Manager...'
+
 # Build LCM
-$lcm = Get-ChildItem -Path '.\source\LCM\LCM.ps1'
+$lcm = Get-ChildItem -Path '.\source\lcm\LCM.ps1'
 
 # Compile lcm configuration
 . $lcm.FullName
 
 # execute lcm configuration
-(Invoke-Expression -Command "$($lcm.BaseName) -PartialConfiguration $($configurations.BaseName -join ',') -OutputPath .\output\$($lcm.BaseName)").Directory
+Invoke-Expression -Command "$($lcm.BaseName) -PartialConfiguration $($configurations.BaseName -join ',') -OutputPath .\output\lcm"
