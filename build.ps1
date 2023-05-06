@@ -18,7 +18,11 @@ param (
     $ConfigurationName = (Get-ChildItem -Path '.\source\workloads').BaseName
 )
 # purge build directory
-Remove-Item -Path '.\output' -Recurse -Force
+if(Test-Path -Path '.\output')
+{
+    Remove-Item -Path '.\output' -Recurse -Force
+}
+
 
 Write-Output -InputObject 'Build configurations...'
 
