@@ -1,4 +1,4 @@
-configuration OneDrive {
+configuration OneDrive-Sharing {
 
     Import-DscResource -ModuleName 'PSDesiredStateConfiguration'
 
