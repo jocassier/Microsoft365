@@ -80,46 +80,45 @@ $modules = Import-PowerShellDataFile -Path (Join-Path -Path $workingDirectory -C
 
 if ($modules.ContainsKey("Microsoft365Dsc"))
 {
-    Write-Log -Message 'Checking Microsoft365Dsc version' -Level 1
-    $psGalleryVersion = $modules.Microsoft365Dsc
+    Write-Log -Message 'Checking Microsoft365Dsc version'
+    $currentVersion = $modules.Microsoft365Dsc
     $localModule = Get-Module 'Microsoft365Dsc' -ListAvailable
-    Write-Log -Message "Required version: $psGalleryVersion" -Level 2
-    Write-Log -Message "Installed version: $($localModule.Version)" -Level 2
+    Write-Log -Message "Required version: $currentVersion" -Level 1
+    Write-Log -Message "Installed version: $($localModule.Version)" -Level 1
 
-    if ($localModule.Version -ne $psGalleryVersion)
+    if ($localModule.Version -ne $currentVersion)
     {
         if ($null -ne $localModule)
         {
-            Write-Log -Message 'Incorrect version installed. Removing current module.' -Level 3
-            Write-Log -Message 'Removing Microsoft365DSC' -Level 4
-            $m365ModulePath = Join-Path -Path 'C:\Program Files\WindowsPowerShell\Modules' -ChildPath 'Microsoft365DSC'
-            Remove-Item -Path $m365ModulePath -Force -Recurse -ErrorAction 'SilentlyContinue'
+            Write-Log -Message 'Incorrect version installed.' -Level 1
+            Write-Log -Message 'Uninstall Microsoft365DSC' -Level 2
+            Uninstall-Module -Name $localModule.Name -Force
         }
 
-        Write-Log -Message 'Configuring PowerShell Gallery' -Level 4
+        Write-Log -Message 'Configuring PowerShell Gallery' -Level 2
         Set-PSRepository -Name 'PSGallery' -InstallationPolicy 'Trusted'
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         $psGetModule = Get-Module -Name PowerShellGet -ListAvailable | Select-Object -First 1
         if ($null -eq $psGetModule)
         {
-            Write-Log -Message '* Installing PowerShellGet' -Level 5
+            Write-Log -Message '* Installing PowerShellGet' -Level 3
             $null = Install-Module PowerShellGet -SkipPublisherCheck -Force
         }
         else
         {
             if ($psGetModule.Version -lt [System.Version]"2.2.4.0")
             {
-                Write-Log -Message '* Installing PowerShellGet' -Level 5
+                Write-Log -Message '* Installing PowerShellGet' -Level 3
                 $null = Install-Module PowerShellGet -SkipPublisherCheck -Force
             }
         }
 
-        Write-Log -Message 'Installing Microsoft365Dsc' -Level 4
+        Write-Log -Message 'Installing Microsoft365Dsc' -Level 2
         $null = Install-Module -Name 'Microsoft365Dsc' -RequiredVersion $psGalleryVersion
     }
     else
     {
-        Write-Log -Message 'Correct version installed, continuing.' -Level 3
+        Write-Log -Message 'Correct version installed, continuing.' -Level 1
     }
 
     Write-Log -Message 'Modules installed successfully!'
