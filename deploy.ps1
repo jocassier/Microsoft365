@@ -11,7 +11,7 @@ Write-Output -InputObject 'Setup LCM...'
 
 Set-DscLocalConfigurationManager -Path '.\output\LCM' -Verbose
 
-$configurations = Get-ChildItem -Path '.\output\workloads' -Recurse -Filter '*.mof' #| Where-Object -FilterScript {$_.Directory.Name -in $ConfigurationName}
+$configurations = Get-ChildItem -Path '.\output\workloads' -Recurse -Filter '*.mof' 
 
 if($Test.IsPresent) 
 {
@@ -24,10 +24,6 @@ if($Test.IsPresent)
 }
 else 
 {
-    # Write-Output -InputObject 'Remove configuration documents from LCM...'
-
-    # Remove-DscConfigurationDocument -Stage Current, Previous, Pending -Verbose -Force
-
     Write-Output -InputObject 'Publish configurations to LCM...'
 
     Foreach($configuration in $configurations) 

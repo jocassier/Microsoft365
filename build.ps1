@@ -15,7 +15,7 @@ param (
         }
     )]
     [String[]] 
-    $ConfigurationName = (Get-ChildItem -Path '.\source\workloads').BaseName
+    $Workloads = (Get-ChildItem -Path '.\source\workloads' -Depth 1).BaseName
 )
 # purge build directory
 if(Test-Path -Path '.\output')
