@@ -62,27 +62,29 @@ Write-Log -Message '*      Starting M365 DSC Configuration Compilation      *'
 Write-Log -Message '*********************************************************'
 Write-Log -Message ' '
 
-$workingDirectory = $PSScriptRoot
-Set-Location -Path $workingDirectory
+Set-Location -Path $PSScriptRoot
 
-Write-Log -Message "Switching to path: $workingDirectory"
+Write-Log -Message "Switching to path: $PSScriptRoot"
 Write-Log -Message ' '
-if (($env:PSModulePath -like "*$($workingDirectory)*") -eq $false)
+
+if (($env:PSModulePath -like "*$($PSScriptRoot)*") -eq $false)
 {
     Write-Log -Message "Adding current folder to PSModulePath"
-    $env:PSModulePath = $env:PSModulePath.TrimEnd(";") + "$([IO.Path]::PathSeparator)$($workingDirectory)"
+    $env:PSModulePath = $env:PSModulePath.TrimEnd(";") + "$([IO.Path]::PathSeparator)$($PSScriptRoot)"
 }
 
 Write-Log -Message 'Checking for presence of Microsoft365Dsc module and all required modules'
 Write-Log -Message ' '
 
-$modules = Import-PowerShellDataFile -Path (Join-Path -Path $workingDirectory -ChildPath 'DscResources.psd1')
+$modules = Import-PowerShellDataFile -Path (Join-Path -Path $PSScriptRoot -ChildPath 'DscResources.psd1')
 
 if ($modules.ContainsKey("Microsoft365Dsc"))
 {
     Write-Log -Message 'Checking Microsoft365Dsc version'
+
     $currentVersion = $modules.Microsoft365Dsc
     $localModule = Get-Module 'Microsoft365Dsc' -ListAvailable
+
     Write-Log -Message "Required version: $currentVersion" -Level 1
     Write-Log -Message "Installed version: $($localModule.Version)" -Level 1
 
@@ -122,7 +124,6 @@ if ($modules.ContainsKey("Microsoft365Dsc"))
     }
 
     Write-Log -Message 'Modules installed successfully!'
-    Write-Log -Message ' '
 }
 else
 {
@@ -131,96 +132,13 @@ else
     Write-Host "##vso[task.complete result=Failed;]Failed"
     exit 10
 }
-<#
-Write-Log -Message 'Preparing MOF compilation'
-Write-Log -Message "Loading DSC configuration '$dscScriptName'" -Level 1
-. (Join-Path -Path $workingDirectory -ChildPath $dscScriptName)
 
-$outputFolder = Join-Path -Path $workingDirectory -ChildPath 'Output'
-Write-Log -Message "Preparing OutputFolder '$outputFolder'" -Level 1
-if ((Test-Path -Path $outputFolder))
-{
-    Remove-Item -Path $outputFolder -Recurse -Confirm:$false
-}
-$null = New-Item -Path $outputFolder -ItemType 'Directory'
-
-Copy-Item -Path 'DscResources.psd1' -Destination $outputFolder
-Copy-Item -Path 'deploy.ps1' -Destination $outputFolder
-Copy-Item -Path 'checkdsccompliancy.ps1' -Destination $outputFolder
-
-Write-Log -Message 'Retrieving Credentials' -Level 1
-[array]$datafiles = Get-ChildItem -Path (Join-Path -Path $workingDirectory -ChildPath 'Datafiles') -Filter *.psd1
-Write-Log -Message "Found $($datafiles.Count) data file(s)" -Level 2
-
-$credentials = @{}
-foreach ($datafile in $datafiles)
-{
-    Write-Log -Message "Processing: $($datafile.Name)" -Level 3
-
-    $outputPathDataFile = Join-Path -Path $outputFolder -ChildPath $datafile.BaseName
-    if ((Test-Path -Path $outputPathDataFile) -eq $false)
-    {
-        $null = New-Item -Path $outputPathDataFile -ItemType Directory
-    }
-    Copy-Item -Path $datafile.FullName -Destination $outputPathDataFile
-
-    $envData = Import-PowerShellDataFile -Path $datafile.FullName
-    $envName = $envData.NonNodeData.Environment.ShortName
-    $credentials.$envName = @{}
-
-    Write-Log -Message "Getting passwords from KeyVault '$VaultName'" -Level 4
-    foreach ($function in $envData.NonNodeData.Accounts)
-    {
-        Write-Log -Message "Getting password from KeyVault for $($function.Workload)" -Level 4
-        $keyVaultSearchString = "{0}-Cred-{1}" -f $envName, $function.Workload
-        $secret = Get-AzKeyVaultSecret -VaultName $VaultName -Name $keyVaultSearchString -ErrorAction SilentlyContinue
-        if ($null -eq $secret)
-        {
-            Write-Log -Message "[ERROR] Cannot find $keyVaultSearchString in Azure KeyVault" -Level 5
-            Write-Error "Build failed!"
-            Write-Host "##vso[task.complete result=Failed;]Failed"
-            exit 20
-        }
-
-        $password = $secret.SecretValue
-        $username = $function.Account
-        $cred = New-Object System.Management.Automation.PSCredential($username, $password)
-
-        $credentials.$envName.$($function.Workload) = $cred
-    }
-}
+######## BUILD  ########
 
 Write-Log -Message ' '
 Write-Log -Message 'Start MOF compilation'
 
-foreach ($datafile in $datafiles)
-{
-    Write-Log -Message "Processing: $($datafile.Name)" -Level 2
-    $envData = Import-PowerShellDataFile -Path $datafile.FullName
-    $envName = $envData.NonNodeData.Environment.ShortName
-
-    $certPath = Join-Path -Path $workingDirectory -ChildPath $envData.AllNodes[0].CertificateFile.TrimStart('.\')
-    $envData.AllNodes[0].CertificateFile = $certPath
-    $null = M365Configuration -Credentials $credentials.$envName -ConfigurationData $envData -OutputPath $outputFolder\$($datafile.BaseName)
-}
-
-Write-Log -Message ' '
-Write-Log -Message '*********************************************************'
-Write-Log -Message '*      Finished M365 DSC Configuration Compilation      *'
-Write-Log -Message '*********************************************************'
-Write-Log -Message ' '
-
-
-#region Prepare
-
-# purge build directory
-
-#endregion
-
-#region Build_configurations
-
-Write-Output -InputObject 'Build configurations(s)...'
-
+# workload configurations
 $configurations = @()
 
 foreach($workload in $Workloads) 
@@ -230,28 +148,19 @@ foreach($workload in $Workloads)
 
 foreach($configuration in $configurations) 
 {
-    Write-Output -InputObject $configuration.BaseName
-
-    # compile
+    Write-Log -Message "Processing: $($configuration.BaseName)" -Level 1
     . $configuration.FullName
-
-    # build
     $null = (Invoke-Expression -Command "$($configuration.BaseName) -OutputPath .\output\workloads\$($configuration.BaseName)")
 }
 
-#endregion
-
-#region Build_lcm
-
+# lcm configuration
 $lcm = Get-ChildItem -Path '.\source\lcm\LCM.ps1'
 
-Write-Output -InputObject $lcm.BaseName
-
-# compile 
+Write-Log -Message "Processing: $($lcm.BaseName)" -Level 1
 . $lcm.FullName
-
-# build
 $null = Invoke-Expression -Command "$($lcm.BaseName) -PartialConfiguration $($configurations.BaseName -join ',') -OutputPath .\output\lcm"
 
-#endregion
-#>
+Write-Log -Message ' '
+Write-Log -Message '*********************************************************'
+Write-Log -Message '*      Finished M365 DSC Configuration Compilation      *'
+Write-Log -Message '*********************************************************'
