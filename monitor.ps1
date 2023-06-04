@@ -6,13 +6,9 @@ Set-DscLocalConfigurationManager -Path '.\output\LCM' -Verbose
 
 $configurations = Get-ChildItem -Path '.\output\workloads' -Recurse -Filter '*.mof' 
 
-Write-Output -InputObject 'Publish configurations to LCM...'
+Write-Output -InputObject 'Test configurations against tenant...'
 
 Foreach($configuration in $configurations) 
 {
-    Publish-DscConfiguration -Path $configuration.DirectoryName
+    Test-DscConfiguration -Path $configuration.DirectoryName
 }
-
-Write-Output -InputObject 'Apply configurations to tenant...'
-
-Start-DscConfiguration -UseExisting -Wait -Verbose

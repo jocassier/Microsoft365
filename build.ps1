@@ -1,21 +1,8 @@
 [CmdletBinding()]
 param (
     [Parameter()]
-    [ValidateScript(
-        { 
-            $validValues = (Get-ChildItem -Path '.\source\workloads').BaseName
-            foreach($value in $_) 
-            {
-                if($value -notin $validValues)
-                {
-                    throw "Valid values are $($validValues -join ', ')"
-                }
-            }
-            return $true 
-        }
-    )]
-    [String[]] 
-    $Workloads = (Get-ChildItem -Path '.\source\workloads' -Directory).BaseName
+    [switch]
+    $SkipBootstrap
 )
 
 ######## FUNCTIONS ########
