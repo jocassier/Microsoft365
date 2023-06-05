@@ -1,13 +1,10 @@
 @{
-    Microsoft365DSC = @{
-        Version = '1.23.503.1'
-    }
+    # Project modules
+    'powershell-yaml' = '0.4.7'
+    'Az.KeyVault' = '4.10.0'
+    'PSDepend' = '0.3.8'
 
-    'powershell-yaml' = @{
-        Version = '0.4.7'
-    }
+    # DSC Resource module
+    Microsoft365DSC = '1.23.503.1'
     
-    PowerShellGet = @{
-        MinimumVersion = '2.2.4.0'
-    }
 }

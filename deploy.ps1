@@ -1,4 +1,10 @@
-#TODO - Setup prereqs loading Powershell Modules etc.
+[CmdletBinding()]
+param (
+    # Parameter help description
+    [Parameter()]
+    [string]
+    $Environment
+)
 
 Write-Output -InputObject 'Setup LCM...'
 

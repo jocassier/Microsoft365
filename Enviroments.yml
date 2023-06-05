@@ -1,0 +1,12 @@
+Test:
+  TenantId: 'TenantUrl'
+  ApplicationId: 'GUID'
+  CertificateThumbprint: 'Thumbprint'
+Stage:
+  TenantId: 'TenantUrl'
+  ApplicationId: 'GUID'
+  CertificateThumbprint: 'Thumbprint'
+Production:
+  TenantId: 'TenantUrl'
+  ApplicationId: 'GUID'
+  CertificateThumbprint: 'Thumbprint'
